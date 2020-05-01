@@ -111,7 +111,17 @@ load_time_dimension_table = LoadDimensionOperator(
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
-    dag=dag
+    dag=dag,
+    redshift_conn_id='redshift',
+    dq_table_check_dct={
+        'staging_events': ("SELECT COUNT(*) FROM staging_events", 8056),
+        'staging_songs': ("SELECT COUNT(*) FROM staging_songs", 14896),
+        'songplays': ("SELECT COUNT(*) FROM songplays", 6820),
+        'users': ("SELECT COUNT(*) FROM users", 104),
+        'artists': ("SELECT COUNT(*) FROM artists", 10025),
+        'songs': ("SELECT COUNT(*) FROM songs", 14896),
+        'time': ("SELECT COUNT(*) FROM time", 6820)
+    }
 )
 
-end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
+end_operator = DummyOperator(task_id='Stop_execution', dag=dag)
