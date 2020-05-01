@@ -2,23 +2,33 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.postgres_operator import PostgresOperator
+from airflow.models import Variable
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
+                               LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
     'owner': 'udacity',
     'start_date': datetime(2019, 1, 12),
-}
+    'retries': 3,
+    'retry_delay': timedelta(minutes=5),
+    'email_on_retry': False,
+    'email_on_failure': False,
+    'depends_on_past': False,
+    'catchup': False
 
+}
+# sql_path contains the absolute path for create_tables.sql file
+sql_path = Variable.get('sql_path')
 dag = DAG('udac_example_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='0 * * * *'
-        )
+          schedule_interval='@hourly',
+          catchup=False,
+          template_searchpath=[sql_path],
+          )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
