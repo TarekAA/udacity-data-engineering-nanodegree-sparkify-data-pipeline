@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.postgres_operator import PostgresOperator
+# from airflow.operators.postgres_operator import PostgresOperator
 from airflow.models import Variable
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                LoadDimensionOperator, DataQualityOperator)
@@ -32,13 +32,14 @@ dag = DAG('udac_example_dag',
 
 start_operator = DummyOperator(task_id='Begin_execution', dag=dag)
 
-create_tables = PostgresOperator(
-    task_id='create_tables',
-    dag=dag,
-    sql='create_tables.sql',
-    postgres_conn_id='redshift'
-
-)
+# Uncomment to include table in creation as part of the dag
+# create_tables = PostgresOperator(
+#     task_id='create_tables',
+#     dag=dag,
+#     sql='create_tables.sql',
+#     postgres_conn_id='redshift'
+#
+# )
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
@@ -130,17 +131,17 @@ end_operator = DummyOperator(task_id='Stop_execution', dag=dag)
 
 # Uncomment if you want to remove create_tables task
 
-# start_operator >> stage_events_to_redshift
-# start_operator >> stage_songs_to_redshift
+start_operator >> stage_events_to_redshift
+start_operator >> stage_songs_to_redshift
 
 # Task create_tables is an optional task,
 # it could be commented in order to avoid creating tables on each run
 # since the dag runs on an hourly basis
 
-start_operator >> create_tables
-
-create_tables >> stage_events_to_redshift
-create_tables >> stage_songs_to_redshift
+# start_operator >> create_tables
+#
+# create_tables >> stage_events_to_redshift
+# create_tables >> stage_songs_to_redshift
 
 stage_events_to_redshift >> load_songplays_table
 stage_songs_to_redshift >> load_songplays_table
