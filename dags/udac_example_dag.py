@@ -131,29 +131,21 @@ end_operator = DummyOperator(task_id='Stop_execution', dag=dag)
 
 # Uncomment if you want to remove create_tables task
 
-start_operator >> stage_events_to_redshift
-start_operator >> stage_songs_to_redshift
+start_operator >> [stage_events_to_redshift, stage_songs_to_redshift]
 
 # Task create_tables is an optional task,
 # it could be commented in order to avoid creating tables on each run
 # since the dag runs on an hourly basis
 
 # start_operator >> create_tables
-#
-# create_tables >> stage_events_to_redshift
-# create_tables >> stage_songs_to_redshift
+# create_tables >> [stage_events_to_redshift, stage_songs_to_redshift]
 
-stage_events_to_redshift >> load_songplays_table
-stage_songs_to_redshift >> load_songplays_table
+load_songplays_table << [stage_events_to_redshift, stage_songs_to_redshift]
 
-load_songplays_table >> load_song_dimension_table
-load_songplays_table >> load_user_dimension_table
-load_songplays_table >> load_artist_dimension_table
-load_songplays_table >> load_time_dimension_table
+load_songplays_table >> [load_song_dimension_table, load_user_dimension_table,
+                         load_artist_dimension_table, load_time_dimension_table]
 
-load_song_dimension_table >> run_quality_checks
-load_user_dimension_table >> run_quality_checks
-load_artist_dimension_table >> run_quality_checks
-load_time_dimension_table >> run_quality_checks
+run_quality_checks << [load_song_dimension_table, load_user_dimension_table,
+                       load_artist_dimension_table, load_time_dimension_table]
 
 run_quality_checks >> end_operator
